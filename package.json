@@ -24,7 +24,7 @@
   "homepage": "https://github.com/NodePolus/framework",
   "dependencies": {
     "commonjs": "^0.0.1",
-    "emittery": "^0.7.2",
+    "emittery": "0.7.2",
     "ipaddr.js": "^2.0.0",
     "winston": "^3.3.3"
   },
