@@ -1274,10 +1274,12 @@ export class Lobby implements LobbyInstance {
    * @param connection - The connection that joined the lobby
    */
   protected broadcastJoinMessage(connection: Connection): void {
-    const validConnections = this.getConnections().filter(con => con.getId() != connection.getId()).filter(con => con.getLimboState() == LimboState.NotLimbo);
-
-    for (let i = 0; i < validConnections.length; i++) {
+    for (let i = 0; i < this.connections.length; i++) {
       const writeConnection = this.getConnections()[i];
+
+      if (writeConnection.getId() === connection.getId() || connection.getLimboState() === LimboState.NotLimbo) {
+        continue;
+      }
 
       writeConnection.sendReliable([
         new JoinGameResponsePacket(
