@@ -1275,7 +1275,7 @@ export class Lobby implements LobbyInstance {
    */
   protected broadcastJoinMessage(connection: Connection): void {
     for (let i = 0; i < this.connections.length; i++) {
-      const writeConnection = this.getConnections()[i];
+      const writeConnection = this.connections[i];
 
       if (writeConnection.getId() === connection.getId() || connection.getLimboState() === LimboState.NotLimbo) {
         continue;
