@@ -229,8 +229,8 @@ export class InnerPlayerControl extends BaseInnerNetObject {
 
     await lobby.finishedSpawningPlayer(owner);
 
-    if (!lobby.isSpawningPlayers()) {
-      lobby.enableActingHosts();
+    if (lobby.getActingHosts().length === 0) {
+      this.getConnection().syncActingHost(true);
     }
   }
 
