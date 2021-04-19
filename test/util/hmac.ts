@@ -3,10 +3,9 @@ import test from "ava";
 
 const message = "I like big butts and I cannot lie";
 const modifiedMessage = message.replace("big", "small");
-const secret = "You other brothers can't deny";
-
 const messageBuffer = Buffer.from(message);
 const modifiedMessageBuffer = Buffer.from(modifiedMessage);
+const secret = "You other brothers can't deny";
 
 test("it can sign a message", t => {
   const hash = Hmac.sign(messageBuffer, secret);
