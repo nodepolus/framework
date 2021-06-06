@@ -537,18 +537,19 @@ export class Host implements HostInstance {
   }
 
   async endGame(reason: GameOverReason): Promise<void> {
-    const oldState = this.lobby.getGameState();
-    const event = new GameEndedEvent(this.lobby.getSafeGame(), reason);
+    if (this.lobby.getGameState() !== GameState.Started) {
+      throw new Error("Cannot end a game that is not in progress");
+    }
 
-    this.lobby.setGameState(GameState.NotStarted);
+    const event = new GameEndedEvent(this.lobby.getSafeGame(), reason);
 
     await this.lobby.getServer().emit("game.ended", event);
 
     if (event.isCancelled()) {
-      this.lobby.setGameState(oldState);
-
       return;
     }
+
+    this.lobby.setGameState(GameState.NotStarted);
 
     const connections = this.lobby.getConnections();
 
