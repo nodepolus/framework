@@ -352,15 +352,17 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     const victim = this.getLobby().findSafePlayerByNetId(victimPlayerControlNetId);
     const event = new PlayerMurderedEvent(victim, this.getPlayer());
 
+    victim.getGameDataEntry().setDead(true);
+
     await this.getLobby().getServer().emit("player.died", event);
     await this.getLobby().getServer().emit("player.murdered", event);
 
     if (event.isCancelled()) {
-      // TODO: Find way to despawn dead body
+      victim.getGameDataEntry().setDead(false);
+
       return;
     }
 
-    victim.getGameDataEntry().setDead(true);
     this.sendRpcPacket(new MurderPlayerPacket(victimPlayerControlNetId), sendTo);
   }
 
