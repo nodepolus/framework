@@ -136,6 +136,8 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       throw new Error(`Player ${this.playerId} has fewer tasks (${taskCount}) than the requested index (${taskIndex})`);
     }
 
+    playerData.completeTaskAtIndex(taskIndex);
+
     const event = new PlayerTaskCompletedEvent(this.getPlayer(), taskIndex, playerData.getTasks()[taskIndex][0]);
 
     await this.getLobby().getServer().emit("player.task.completed", event);
@@ -145,6 +147,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       const tasks = [...playerData.getTasks()];
       const deleted = tasks.splice(taskIndex, 1);
 
+      playerData.completeTaskAtIndex(taskIndex, false);
       this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
       tasks.splice(taskIndex, 0, deleted[0]);
       this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
@@ -159,8 +162,6 @@ export class InnerPlayerControl extends BaseInnerNetObject {
 
       return;
     }
-
-    playerData.completeTaskAtIndex(taskIndex);
     this.sendRpcPacket(new CompleteTaskPacket(taskIndex), sendTo);
     this.getLobby().getHostInstance().checkForTaskWin();
   }
