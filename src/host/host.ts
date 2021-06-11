@@ -538,7 +538,7 @@ export class Host implements HostInstance {
 
   async endGame(reason: GameOverReason): Promise<void> {
     if (this.lobby.getGameState() !== GameState.Started) {
-      throw new Error("Cannot end a game that is not in progress");
+      throw new Error("Attempted to end a game that is not in progress");
     }
 
     const event = new GameEndedEvent(this.lobby.getSafeGame(), reason);
