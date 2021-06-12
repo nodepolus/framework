@@ -681,6 +681,10 @@ export class Host implements HostInstance {
 
   async handleReady(connection?: Connection): Promise<void> {
     if (connection !== undefined) {
+      if (this.readyPlayerList.has(connection.getId())) {
+        return;
+      }
+
       this.readyPlayerList.add(connection.getId());
     }
 
