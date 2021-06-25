@@ -202,10 +202,10 @@ export class Lobby implements LobbyInstance {
     this.hostInstance.clearTimers();
 
     const connections = [...this.connections];
-    const promiseArray: Promise<void>[] = [];
+    const disconnects: Promise<void>[] = [];
 
     for (let i = 0; i < this.connections.length; i++) {
-      promiseArray.push(
+      disconnects.push(
         connections[i].disconnect(
           reason ?? DisconnectReason.custom("The lobby was closed by the server"),
           true,
@@ -213,7 +213,7 @@ export class Lobby implements LobbyInstance {
       );
     }
 
-    await Promise.allSettled(promiseArray);
+    await Promise.allSettled(disconnects);
   }
 
   async close(reason?: DisconnectReason, force: boolean = false): Promise<void> {

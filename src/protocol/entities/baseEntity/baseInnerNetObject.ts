@@ -31,7 +31,7 @@ export abstract class BaseInnerNetObject {
   }
 
   async sendRpcPacket(packet: BaseRpcPacket, sendTo?: Connection[]): Promise<void> {
-    if (sendTo === undefined || sendTo.length == 0) {
+    if (sendTo === undefined) {
       return;
     }
 
