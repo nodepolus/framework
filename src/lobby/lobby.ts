@@ -586,7 +586,11 @@ export class Lobby implements LobbyInstance {
     this.gameState = gameState;
   }
 
-  async sendRootGamePacket(packet: BaseRootPacket, sendTo: Connection[] = this.connections): Promise<PromiseSettledResult<void>[]> {
+  async sendRootGamePacket(packet: BaseRootPacket, sendTo?: Connection[]): Promise<PromiseSettledResult<void>[]> {
+    if (sendTo === undefined) {
+      sendTo = this.connections;
+    }
+
     const promiseArray: Promise<void>[] = [];
 
     for (let i = 0; i < sendTo.length; i++) {
@@ -600,7 +604,7 @@ export class Lobby implements LobbyInstance {
     await this.sendRootGamePacket(new GameDataPacket([new RpcPacket(from.getNetId(), packet)], this.code), sendTo);
   }
 
-  async spawn(entity: BaseInnerNetEntity, sendTo: Connection[] = this.connections): Promise<void> {
+  async spawn(entity: BaseInnerNetEntity, sendTo?: Connection[]): Promise<void> {
     const type = entity.getType();
 
     switch (type) {
@@ -653,7 +657,7 @@ export class Lobby implements LobbyInstance {
     return playerInstance;
   }
 
-  async despawn(innerNetObject: BaseInnerNetObject, sendTo: Connection[] = this.connections): Promise<void> {
+  async despawn(innerNetObject: BaseInnerNetObject, sendTo?: Connection[]): Promise<void> {
     if (innerNetObject.getParent().getLobby().getCode() != this.code) {
       throw new Error(`Attempted to despawn an InnerNetObject from a lobby other than its own`);
     }
@@ -846,7 +850,11 @@ export class Lobby implements LobbyInstance {
    * @param packet - The packet to be sent
    * @param sendTo - The connections to which the packet will be send (default `this.connections`)
    */
-  sendUnreliableRootGamePacket(packet: BaseRootPacket, sendTo: Connection[] = this.connections): void {
+  sendUnreliableRootGamePacket(packet: BaseRootPacket, sendTo?: Connection[]): void {
+    if (sendTo === undefined) {
+      sendTo = this.connections;
+    }
+
     for (let i = 0; i < sendTo.length; i++) {
       sendTo[i].writeUnreliable(packet);
     }

@@ -187,7 +187,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     await this.syncSettings(newOptions, options.equals(newOptions) ? sendTo.filter(con => con.getId() !== owner.getId()) : sendTo);
   }
 
-  async syncSettings(options: GameOptionsData, sendTo: Connection[]): Promise<void> {
+  async syncSettings(options: GameOptionsData, sendTo?: Connection[]): Promise<void> {
     await this.sendRpcPacket(new SyncSettingsPacket(options), sendTo);
   }
 
