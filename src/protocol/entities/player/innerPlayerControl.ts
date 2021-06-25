@@ -272,7 +272,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     if (owner.isActingHost()) {
       await this.setColor(color, this.getLobby().getConnections());
     } else {
-      // TODO: Fix desync (?)
+      // Fix desync
       await this.setColor(player.getColor(), this.getLobby().getConnections());
     }
   }
