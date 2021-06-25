@@ -98,68 +98,56 @@ export class Player implements PlayerInstance {
     return this.name;
   }
 
-  setName(name: TextComponent | string): this {
+  async setName(name: TextComponent | string): Promise<void> {
     if (name instanceof TextComponent) {
       this.name = name;
     } else {
       this.name = TextComponent.from(name);
     }
 
-    this.entity.getPlayerControl().setName(name.toString(), this.lobby.getConnections());
-
-    return this;
+    await this.entity.getPlayerControl().setName(name.toString(), this.lobby.getConnections());
   }
 
   getColor(): PlayerColor {
     return this.getGameDataEntry().getColor();
   }
 
-  setColor(color: PlayerColor): this {
-    this.entity.getPlayerControl().setColor(color, this.lobby.getConnections());
-
-    return this;
+  async setColor(color: PlayerColor): Promise<void> {
+    await this.entity.getPlayerControl().setColor(color, this.lobby.getConnections());
   }
 
   getHat(): PlayerHat {
     return this.getGameDataEntry().getHat();
   }
 
-  setHat(hat: PlayerHat): this {
-    this.entity.getPlayerControl().handleSetHat(hat, this.lobby.getConnections());
-
-    return this;
+  async setHat(hat: PlayerHat): Promise<void> {
+    await this.entity.getPlayerControl().handleSetHat(hat, this.lobby.getConnections());
   }
 
   getPet(): PlayerPet {
     return this.getGameDataEntry().getPet();
   }
 
-  setPet(pet: PlayerPet): this {
-    this.entity.getPlayerControl().handleSetPet(pet, this.lobby.getConnections());
-
-    return this;
+  async setPet(pet: PlayerPet): Promise<void> {
+    await this.entity.getPlayerControl().handleSetPet(pet, this.lobby.getConnections());
   }
 
   getSkin(): PlayerSkin {
     return this.getGameDataEntry().getSkin();
   }
 
-  setSkin(skin: PlayerSkin): this {
-    this.entity.getPlayerControl().handleSetSkin(skin, this.lobby.getConnections());
-
-    return this;
+  async setSkin(skin: PlayerSkin): Promise<void> {
+    await this.entity.getPlayerControl().handleSetSkin(skin, this.lobby.getConnections());
   }
 
   getRole(): PlayerRole {
     return this.role;
   }
 
-  setRole(role: PlayerRole): this {
+  setRole(role: PlayerRole): void {
     this.role = role;
 
     this.getGameDataEntry().setImpostor(role == PlayerRole.Impostor);
-
-    return this;
   }
 
   isImpostor(): boolean {
@@ -183,15 +171,17 @@ export class Player implements PlayerInstance {
     // TODO: Check end state
     // TODO: Send UpdateGameData packet
 
-    this.entity.getPlayerControl().sendRpcPacket(
+    await this.entity.getPlayerControl().sendRpcPacket(
       new SetInfectedPacket([this.getId()]),
       this.lobby.getConnections(),
     );
   }
 
-  setCrewmate(): void {
+  async setCrewmate(): Promise<void> {
     // TODO: Is this possible?
     this.lobby.getLogger().warn("PlayerInstance#setCrewmate() is not yet implemented");
+
+    return new Promise(resolve => resolve());
   }
 
   isDead(): boolean {
@@ -202,10 +192,8 @@ export class Player implements PlayerInstance {
     return this.getGameDataEntry().getTasks();
   }
 
-  setTasks(tasks: Set<LevelTask>): this {
-    this.lobby.getHostInstance().setPlayerTasks(this, [...tasks]);
-
-    return this;
+  async setTasks(tasks: Set<LevelTask>): Promise<void> {
+    await this.lobby.getHostInstance().setPlayerTasks(this, [...tasks]);
   }
 
   async addTasks(tasks: Set<LevelTask>): Promise<void> {
@@ -225,7 +213,7 @@ export class Player implements PlayerInstance {
 
     if (!event.isCancelled()) {
       this.getGameDataEntry().setTasks(taskList);
-      (this.lobby.getHostInstance() as Host).updatePlayerTasks(this, taskList.map(task => task[0]));
+      await (this.lobby.getHostInstance() as Host).updatePlayerTasks(this, taskList.map(task => task[0]));
     }
   }
 
@@ -246,7 +234,7 @@ export class Player implements PlayerInstance {
 
     if (!event.isCancelled()) {
       this.getGameDataEntry().setTasks(taskList);
-      (this.lobby.getHostInstance() as Host).updatePlayerTasks(this, taskList.map(task => task[0]));
+      await (this.lobby.getHostInstance() as Host).updatePlayerTasks(this, taskList.map(task => task[0]));
     }
   }
 
@@ -258,16 +246,12 @@ export class Player implements PlayerInstance {
     return this.getGameDataEntry().isTaskCompleted(task);
   }
 
-  completeTaskAtIndex(taskIndex: number): this {
-    this.entity.getPlayerControl().handleCompleteTask(taskIndex, this.lobby.getConnections());
-
-    return this;
+  async completeTaskAtIndex(taskIndex: number): Promise<void> {
+    await this.entity.getPlayerControl().handleCompleteTask(taskIndex, this.lobby.getConnections());
   }
 
-  completeTask(task: LevelTask): this {
-    this.entity.getPlayerControl().handleCompleteTask(this.getTasks().findIndex(t => t[0] == task), this.lobby.getConnections());
-
-    return this;
+  async completeTask(task: LevelTask): Promise<void> {
+    await this.entity.getPlayerControl().handleCompleteTask(this.getTasks().findIndex(t => t[0] == task), this.lobby.getConnections());
   }
 
   async uncompleteTaskAtIndex(taskIndex: number): Promise<void> {
@@ -296,10 +280,8 @@ export class Player implements PlayerInstance {
     return this.entity.getCustomNetworkTransform().getPosition();
   }
 
-  setPosition(position: Vector2, reason: TeleportReason = TeleportReason.Unknown): this {
-    this.entity.getCustomNetworkTransform().handleSnapTo(position, reason, this.lobby.getConnections());
-
-    return this;
+  async setPosition(position: Vector2, reason: TeleportReason = TeleportReason.Unknown): Promise<void> {
+    await this.entity.getCustomNetworkTransform().handleSnapTo(position, reason, this.lobby.getConnections());
   }
 
   getVelocity(): Vector2 {
@@ -310,44 +292,36 @@ export class Player implements PlayerInstance {
     return this.entity.getPlayerPhysics().getVent();
   }
 
-  enterVent(vent: LevelVent): this {
-    this.entity.getPlayerPhysics().handleEnterVent(vent, this.lobby.getConnections());
-
-    return this;
+  async enterVent(vent: LevelVent): Promise<void> {
+    await this.entity.getPlayerPhysics().handleEnterVent(vent, this.lobby.getConnections());
   }
 
-  exitVent(vent: LevelVent): this {
-    this.entity.getPlayerPhysics().handleExitVent(vent, this.lobby.getConnections());
-
-    return this;
+  async exitVent(vent: LevelVent): Promise<void> {
+    await this.entity.getPlayerPhysics().handleExitVent(vent, this.lobby.getConnections());
   }
 
   isScanning(): boolean {
     return this.entity.getPlayerControl().isScanning();
   }
 
-  kill(): this {
+  async kill(): Promise<void> {
     const gameData = this.lobby.getSafeGameData();
 
-    this.entity.getPlayerControl().exile();
-    gameData.getGameData().updateGameData([this.getGameDataEntry()], this.lobby.getConnections());
+    await this.entity.getPlayerControl().exile();
+    await gameData.getGameData().updateGameData([this.getGameDataEntry()], this.lobby.getConnections());
 
     if (this.isImpostor()) {
-      this.lobby.getHostInstance().handleImpostorDeath();
+      await this.lobby.getHostInstance().handleImpostorDeath();
     } else {
-      this.lobby.getHostInstance().handleMurderPlayer(this.entity.getPlayerControl(), 0);
+      await this.lobby.getHostInstance().handleMurderPlayer(this.entity.getPlayerControl(), 0);
     }
-
-    return this;
   }
 
-  murder(player: PlayerInstance): this {
+  async murder(player: PlayerInstance): Promise<void> {
     const playerControl = this.entity.getPlayerControl();
 
-    playerControl.handleMurderPlayer((player as Player).entity.getPlayerControl().getNetId(), this.lobby.getConnections());
-    this.lobby.getHostInstance().handleMurderPlayer(playerControl, 0);
-
-    return this;
+    await playerControl.handleMurderPlayer((player as Player).entity.getPlayerControl().getNetId(), this.lobby.getConnections());
+    await this.lobby.getHostInstance().handleMurderPlayer(playerControl, 0);
   }
 
   async revive(): Promise<void> {
@@ -383,17 +357,17 @@ export class Player implements PlayerInstance {
       this.entity.getCustomNetworkTransform().getNetId(),
     );
 
-    this.setName("");
+    await this.setName("");
 
     if (this.connection.isActingHost()) {
-      this.connection.writeReliable(new RemovePlayerPacket(this.lobby.getCode(), this.entity.getOwnerId(), this.entity.getOwnerId(), DisconnectReason.destroy()));
-      this.connection.writeReliable(new JoinGameResponsePacket(this.lobby.getCode(), this.entity.getOwnerId(), this.entity.getOwnerId()));
+      await this.connection.writeReliable(new RemovePlayerPacket(this.lobby.getCode(), this.entity.getOwnerId(), this.entity.getOwnerId(), DisconnectReason.destroy()));
+      await this.connection.writeReliable(new JoinGameResponsePacket(this.lobby.getCode(), this.entity.getOwnerId(), this.entity.getOwnerId()));
     } else {
-      this.connection.writeReliable(new RemovePlayerPacket(this.lobby.getCode(), this.entity.getOwnerId(), this.lobby.getHostInstance().getId(), DisconnectReason.destroy()));
-      this.connection.writeReliable(new JoinGameResponsePacket(this.lobby.getCode(), this.entity.getOwnerId(), this.lobby.getHostInstance().getId()));
+      await this.connection.writeReliable(new RemovePlayerPacket(this.lobby.getCode(), this.entity.getOwnerId(), this.lobby.getHostInstance().getId(), DisconnectReason.destroy()));
+      await this.connection.writeReliable(new JoinGameResponsePacket(this.lobby.getCode(), this.entity.getOwnerId(), this.lobby.getHostInstance().getId()));
     }
 
-    this.setName(oldName);
+    await this.setName(oldName);
 
     const connections = this.lobby.getConnections();
 
@@ -401,7 +375,7 @@ export class Player implements PlayerInstance {
       const connection = connections[i];
 
       if (connection.getId() != this.entity.getOwnerId()) {
-        connection.writeReliable(new GameDataPacket([
+        await connection.writeReliable(new GameDataPacket([
           new DespawnPacket(this.entity.getPlayerControl().getNetId()),
           new DespawnPacket(this.entity.getPlayerPhysics().getNetId()),
           new DespawnPacket(this.entity.getCustomNetworkTransform().getNetId()),
@@ -413,95 +387,75 @@ export class Player implements PlayerInstance {
 
     this.entity = entity;
 
-    gameData.getGameData().updateGameData([this.getGameDataEntry()], connections);
+    await gameData.getGameData().updateGameData([this.getGameDataEntry()], connections);
 
-    this.lobby.sendRootGamePacket(new GameDataPacket([
+    await this.lobby.sendRootGamePacket(new GameDataPacket([
       entity.serializeSpawn(),
     ], this.lobby.getCode()));
   }
 
-  sendChat(message: string): this {
-    this.entity.getPlayerControl().handleSendChat(message, this.lobby.getConnections());
-
-    return this;
+  async sendChat(message: string): Promise<void> {
+    await this.entity.getPlayerControl().handleSendChat(message, this.lobby.getConnections());
   }
 
-  startMeeting(victim?: PlayerInstance): this {
-    this.lobby.getHostInstance().handleReportDeadBody(this.entity.getPlayerControl(), victim?.getId());
-
-    return this;
+  async startMeeting(victim?: PlayerInstance): Promise<void> {
+    await this.lobby.getHostInstance().handleReportDeadBody(this.entity.getPlayerControl(), victim?.getId());
   }
 
-  castVote(suspect?: PlayerInstance): this {
+  async castVote(suspect?: PlayerInstance): Promise<void> {
     const meetingHud = this.lobby.getMeetingHud();
 
     if (meetingHud !== undefined) {
-      meetingHud.getMeetingHud().castVote(this.getId(), suspect?.getId() ?? -1);
+      await meetingHud.getMeetingHud().castVote(this.getId(), suspect?.getId() ?? -1);
     }
-
-    return this;
   }
 
-  clearVote(): this {
+  async clearVote(): Promise<void> {
     const meetingHud = this.lobby.getMeetingHud();
 
     if (meetingHud !== undefined) {
-      meetingHud.getMeetingHud().clearVote([this]);
+      await meetingHud.getMeetingHud().clearVote([this]);
     }
-
-    return this;
   }
 
-  castVotekick(target: PlayerInstance): this {
-    this.lobby.getSafeGameData().getVoteBanSystem().addVote(this, target as Player, this.lobby.getConnections());
-
-    return this;
+  async castVoteKick(target: PlayerInstance): Promise<void> {
+    await this.lobby.getSafeGameData().getVoteBanSystem().addVote(this, target as Player, this.lobby.getConnections());
   }
 
-  clearVotekick(target: PlayerInstance): this {
-    this.lobby.getSafeGameData().getVoteBanSystem().clearVote(this, target as Player, this.lobby.getConnections());
-
-    return this;
+  async clearVoteKick(target: PlayerInstance): Promise<void> {
+    await this.lobby.getSafeGameData().getVoteBanSystem().clearVote(this, target as Player, this.lobby.getConnections());
   }
 
-  clearVotekicksForMe(): this {
-    this.lobby.getSafeGameData().getVoteBanSystem().clearVotesForPlayer(this, this.lobby.getConnections());
-
-    return this;
+  async clearVoteKicksForMe(): Promise<void> {
+    await this.lobby.getSafeGameData().getVoteBanSystem().clearVotesForPlayer(this, this.lobby.getConnections());
   }
 
-  clearVotekicksFromMe(): this {
-    this.lobby.getSafeGameData().getVoteBanSystem().clearVotesFromPlayer(this, this.lobby.getConnections());
-
-    return this;
+  async clearVoteKicksFromMe(): Promise<void> {
+    await this.lobby.getSafeGameData().getVoteBanSystem().clearVotesFromPlayer(this, this.lobby.getConnections());
   }
 
-  kick(reason?: DisconnectReason): this {
+  async kick(reason?: DisconnectReason): Promise<void> {
     if (this.connection === undefined) {
       throw new Error(`Player ${this.getId()} does not have a connection on the lobby instance`);
     }
 
-    this.connection.sendKick(false, undefined, reason);
-
-    return this;
+    await this.connection.sendKick(false, undefined, reason);
   }
 
-  ban(reason?: DisconnectReason): this {
+  async ban(reason?: DisconnectReason): Promise<void> {
     if (this.connection === undefined) {
       throw new Error(`Player ${this.getId()} does not have a connection on the lobby instance`);
     }
 
-    this.connection.sendKick(true, undefined, reason);
-
-    return this;
+    await this.connection.sendKick(true, undefined, reason);
   }
 
   getGameDataEntry(): PlayerData {
     return this.lobby.getSafeGameData().getGameData().getSafePlayer(this.getId());
   }
 
-  updateGameData(): void {
-    this.lobby.getSafeGameData().getGameData().updateGameData([this.getGameDataEntry()], this.lobby.getConnections());
+  async updateGameData(): Promise<void> {
+    await this.lobby.getSafeGameData().getGameData().updateGameData([this.getGameDataEntry()], this.lobby.getConnections());
   }
 
   /**

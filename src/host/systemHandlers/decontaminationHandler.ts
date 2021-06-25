@@ -38,7 +38,7 @@ export class DecontaminationHandler {
     }
   }
 
-  start(from: DecontaminationDoorState): void {
+  async start(from: DecontaminationDoorState): Promise<void> {
     const systemsHandler = this.host.getSystemsHandler();
 
     if (systemsHandler === undefined) {
@@ -56,7 +56,7 @@ export class DecontaminationHandler {
 
     systemsHandler.setOldShipStatus();
     this.update();
-    systemsHandler.sendDataUpdate();
+    await systemsHandler.sendDataUpdate();
   }
 
   clearTimer(): void {

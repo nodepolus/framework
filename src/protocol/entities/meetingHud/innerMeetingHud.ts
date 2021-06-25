@@ -52,8 +52,8 @@ export class InnerMeetingHud extends BaseInnerNetObject {
     return this;
   }
 
-  castVote(votingPlayerId: number, suspectPlayerId: number, _sendTo?: Connection[]): void {
-    this.parent.getLobby().getHostInstance().handleCastVote(votingPlayerId, suspectPlayerId);
+  async castVote(votingPlayerId: number, suspectPlayerId: number, _sendTo?: Connection[]): Promise<void> {
+    await this.parent.getLobby().getHostInstance().handleCastVote(votingPlayerId, suspectPlayerId);
   }
 
   async clearVote(players: PlayerInstance[]): Promise<void> {

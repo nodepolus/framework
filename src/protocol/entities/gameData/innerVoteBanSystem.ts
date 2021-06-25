@@ -87,13 +87,13 @@ export class InnerVoteBanSystem extends BaseInnerNetObject {
       const player = this.parent.getLobby().findPlayerByClientId(targetClientId);
 
       if (player !== undefined) {
-        player.kick(DisconnectReason.kicked());
-        (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([this.serializeData()], this.parent.getLobby().getCode()), sendTo);
+        await player.kick(DisconnectReason.kicked());
+        await (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([this.serializeData()], this.parent.getLobby().getCode()), sendTo);
       }
     } else {
       this.votes.set(targetClientId, votes);
 
-      this.sendRpcPacket(new AddVotePacket(voterClientId, targetClientId), sendTo);
+      await this.sendRpcPacket(new AddVotePacket(voterClientId, targetClientId), sendTo);
     }
   }
 
@@ -106,10 +106,10 @@ export class InnerVoteBanSystem extends BaseInnerNetObject {
       return;
     }
 
-    this.removeVote(voter.getEntity().getOwnerId(), target.getEntity().getOwnerId(), sendTo);
+    await this.removeVote(voter.getEntity().getOwnerId(), target.getEntity().getOwnerId(), sendTo);
   }
 
-  clearVotesForPlayer(player: Player, sendTo?: Connection[]): this {
+  async clearVotesForPlayer(player: Player, sendTo?: Connection[]): Promise<void> {
     const votes = this.votes.get(player.getEntity().getOwnerId()) ?? [];
 
     for (let i = 0; votes.length; i++) {
@@ -120,16 +120,14 @@ export class InnerVoteBanSystem extends BaseInnerNetObject {
       const voter = this.parent.getLobby().findPlayerByClientId(votes[i]);
 
       if (voter !== undefined) {
-        this.clearVote(voter as Player, player, sendTo);
+        await this.clearVote(voter as Player, player, sendTo);
       } else {
-        this.removeVote(votes[i], player.getEntity().getOwnerId(), sendTo);
+        await this.removeVote(votes[i], player.getEntity().getOwnerId(), sendTo);
       }
     }
-
-    return this;
   }
 
-  clearVotesFromPlayer(player: Player, sendTo?: Connection[]): this {
+  async clearVotesFromPlayer(player: Player, sendTo?: Connection[]): Promise<void> {
     const voterClientId = player.getEntity().getOwnerId();
     const votes = [...this.votes.entries()]
       .filter(entry => entry[0] != voterClientId && entry[1].includes(voterClientId))
@@ -139,13 +137,11 @@ export class InnerVoteBanSystem extends BaseInnerNetObject {
       const target = this.parent.getLobby().findPlayerByClientId(votes[i]);
 
       if (target !== undefined) {
-        this.clearVote(player, target as Player, sendTo);
+        await this.clearVote(player, target as Player, sendTo);
       } else {
-        this.removeVote(voterClientId, votes[i], sendTo);
+        await this.removeVote(voterClientId, votes[i], sendTo);
       }
     }
-
-    return this;
   }
 
   handleRpc(connection: Connection, type: RpcPacketType, packet: BaseRpcPacket, sendTo: Connection[]): void {
@@ -194,16 +190,14 @@ export class InnerVoteBanSystem extends BaseInnerNetObject {
     return new InnerVoteBanSystem(this.parent, new Map(this.votes), this.netId);
   }
 
-  protected removeVote(voterClientId: number, targetClientId: number, sendTo?: Connection[]): this {
+  protected async removeVote(voterClientId: number, targetClientId: number, sendTo?: Connection[]): Promise<void> {
     const votes = this.votes.get(targetClientId) ?? [0, 0, 0];
     const index = votes.indexOf(voterClientId);
 
     if (index > -1) {
       votes.splice(index, 1);
       this.votes.set(targetClientId, votes);
-      (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([this.serializeData()], this.parent.getLobby().getCode()), sendTo);
+      await (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([this.serializeData()], this.parent.getLobby().getCode()), sendTo);
     }
-
-    return this;
   }
 }

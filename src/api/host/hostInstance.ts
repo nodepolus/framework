@@ -45,12 +45,12 @@ export interface HostInstance {
    * @param count - The number of seconds until the game will start
    * @param starter - The player who started the countdown, or `undefined` if it was started va the API
    */
-  startCountdown(count: number, starter?: PlayerInstance): void;
+  startCountdown(count: number, starter?: PlayerInstance): Promise<void>;
 
   /**
    * Stops the start-game countdown.
    */
-  stopCountdown(): void;
+  stopCountdown(): Promise<void>;
 
   /**
    * Gets whether or not the start-game countdown is active.
@@ -60,7 +60,7 @@ export interface HostInstance {
   /**
    * Starts the game.
    */
-  startGame(): void;
+  startGame(): Promise<void>;
 
   /**
    * Sets the given number of players to Impostor.
@@ -72,7 +72,7 @@ export interface HostInstance {
   /**
    * Assigns tasks to all players.
    */
-  setTasks(): void;
+  setTasks(): Promise<void>;
 
   /**
    * Assigns the given player the given tasks.
@@ -80,24 +80,24 @@ export interface HostInstance {
    * @param player - The player whose tasks are being assigned
    * @param tasks - The tasks being assigned to the player
    */
-  setPlayerTasks(player: PlayerInstance, tasks: LevelTask[]): void;
+  setPlayerTasks(player: PlayerInstance, tasks: LevelTask[]): Promise<void>;
 
   /**
    * Ends the current meeting.
    */
-  endMeeting(): void;
+  endMeeting(): Promise<void>;
 
   /**
    * Ends the game if all tasks are completed.
    */
-  checkForTaskWin(): void;
+  checkForTaskWin(): Promise<void>;
 
   /**
    * Ends the game with the given reason.
    *
    * @param reason - The reason for why the game ended
    */
-  endGame(reason: GameOverReason): void;
+  endGame(reason: GameOverReason): Promise<boolean>;
 
   // TODO: Move to InnerPlayerControl
   /**
@@ -106,7 +106,7 @@ export interface HostInstance {
    *
    * @param player - The player whose PlayerData will be checked
    */
-  ensurePlayerDataExists(player: PlayerInstance): void;
+  ensurePlayerDataExists(player: PlayerInstance): Promise<void>;
 
   /**
    * Gets the ShipStatus system controller.
@@ -137,7 +137,7 @@ export interface HostInstance {
   /**
    * Called when an Impostor dies.
    */
-  handleImpostorDeath(): void;
+  handleImpostorDeath(): Promise<void>;
 
   /**
    * Called when a connection sends a Disconnect packet.
@@ -145,14 +145,14 @@ export interface HostInstance {
    * @param connection - The connection that sent the packet
    * @param reason - The reason for why the connection was disconnected
    */
-  handleDisconnect(connection: Connection, reason?: DisconnectReason): void;
+  handleDisconnect(connection: Connection, reason?: DisconnectReason): Promise<void>;
 
   /**
    * Called when a connection sends a Ready GameData packet.
    *
    * @param connection - The connection that sent the packet
    */
-  handleReady(connection: Connection): void;
+  handleReady(connection: Connection): Promise<void>;
 
   /**
    * Called when a connection sends a SceneChange GameData packet.
@@ -160,7 +160,7 @@ export interface HostInstance {
    * @param connection - The connection that sent the packet
    * @param sceneName - The name of the scene that the connection changed to
    */
-  handleSceneChange(connection: Connection, sceneName: string): void;
+  handleSceneChange(connection: Connection, sceneName: string): Promise<void>;
 
   /**
    * Called when a connection sends a ReportDeadBody RPC packet.
@@ -168,7 +168,7 @@ export interface HostInstance {
    * @param sender - The PlayerControl that sent the packet
    * @param victimPlayerId - The ID of the player whose body was found, or `undefined` if the player called an emergency meeting
    */
-  handleReportDeadBody(sender: InnerPlayerControl, victimPlayerId?: number): void;
+  handleReportDeadBody(sender: InnerPlayerControl, victimPlayerId?: number): Promise<void>;
 
   /**
    * Called when a connection sends a MurderPlayer RPC packet.
@@ -176,7 +176,7 @@ export interface HostInstance {
    * @param sender - The PlayerControl that sent the packet
    * @param victimPlayerControlNetId - The net ID of the PlayerControl for the player that was murdered
    */
-  handleMurderPlayer(sender: InnerPlayerControl, victimPlayerControlNetId: number): void;
+  handleMurderPlayer(sender: InnerPlayerControl, victimPlayerControlNetId: number): Promise<void>;
 
   /**
    * Called when a connection sends a SetStartCounter RPC packet.
@@ -185,7 +185,7 @@ export interface HostInstance {
    * @param sequenceId - The sequence ID sent to force the counter to update
    * @param timeRemaining - The number of seconds until the game will start
    */
-  handleSetStartCounter(player: PlayerInstance, sequenceId: number, timeRemaining: number): void;
+  handleSetStartCounter(player: PlayerInstance, sequenceId: number, timeRemaining: number): Promise<void>;
 
   /**
    * Called when a connection sends a CastVote RPC packet.
@@ -193,5 +193,5 @@ export interface HostInstance {
    * @param votingPlayerId - The ID of the player who cast the vote
    * @param suspectPlayerId - The ID of the player who is being voted to be exiled
    */
-  handleCastVote(votingPlayerId: number, suspectPlayerId: number): void;
+  handleCastVote(votingPlayerId: number, suspectPlayerId: number): Promise<void>;
 }

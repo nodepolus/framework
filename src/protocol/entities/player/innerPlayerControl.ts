@@ -76,40 +76,32 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     return this.playerId;
   }
 
-  setPlayerId(playerId: number): this {
+  setPlayerId(playerId: number): void {
     this.playerId = playerId;
-
-    return this;
   }
 
   isNewPlayer(): boolean {
     return this.newPlayer;
   }
 
-  setNewPlayer(newPlayer: boolean): this {
+  setNewPlayer(newPlayer: boolean): void {
     this.newPlayer = newPlayer;
-
-    return this;
   }
 
   isScanning(): boolean {
     return this.scanning;
   }
 
-  setScanning(scanning: boolean): this {
+  setScanning(scanning: boolean): void {
     this.scanning = scanning;
-
-    return this;
   }
 
   getScannerSequenceId(): number {
     return this.scannerSequenceId;
   }
 
-  setScannerSequenceId(scannerSequenceId: number): this {
+  setScannerSequenceId(scannerSequenceId: number): void {
     this.scannerSequenceId = scannerSequenceId;
-
-    return this;
   }
 
   async handlePlayAnimation(taskType: TaskType, sendTo?: Connection[]): Promise<void> {
@@ -121,7 +113,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       return;
     }
 
-    this.sendRpcPacket(new PlayAnimationPacket(event.getTaskType()), sendTo);
+    await this.sendRpcPacket(new PlayAnimationPacket(event.getTaskType()), sendTo);
   }
 
   async handleCompleteTask(taskIndex: number, sendTo?: Connection[]): Promise<void> {
@@ -148,22 +140,22 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       const deleted = tasks.splice(taskIndex, 1);
 
       playerData.completeTaskAtIndex(taskIndex, false);
-      this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
+      await this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
       tasks.splice(taskIndex, 0, deleted[0]);
-      this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
+      await this.sendRpcPacket(new SetTasksPacket(this.playerId, tasks.map(task => task[0].id)), [connection]);
 
       for (let i = 0; i < tasks.length; i++) {
         if (!tasks[1]) {
           continue;
         }
 
-        this.sendRpcPacket(new CompleteTaskPacket(i), [connection]);
+        await this.sendRpcPacket(new CompleteTaskPacket(i), [connection]);
       }
 
       return;
     }
-    this.sendRpcPacket(new CompleteTaskPacket(taskIndex), sendTo);
-    this.getLobby().getHostInstance().checkForTaskWin();
+    await this.sendRpcPacket(new CompleteTaskPacket(taskIndex), sendTo);
+    await this.getLobby().getHostInstance().checkForTaskWin();
   }
 
   async handleSyncSettings(options: GameOptionsData, _sendTo?: Connection[]): Promise<void> {
@@ -172,7 +164,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     const owner = lobby.findSafeConnection(this.getOwnerId());
 
     if (!owner.isActingHost()) {
-      this.sendRpcPacket(new SyncSettingsPacket(options), [owner]);
+      await this.sendRpcPacket(new SyncSettingsPacket(options), [owner]);
 
       return;
     }
@@ -183,7 +175,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     await lobby.getServer().emit("lobby.options.updated", event);
 
     if (event.isCancelled()) {
-      this.sendRpcPacket(new SyncSettingsPacket(options), [owner]);
+      await this.sendRpcPacket(new SyncSettingsPacket(options), [owner]);
 
       return;
     }
@@ -192,11 +184,11 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     const sendTo = lobby.getConnections();
 
     lobby.setOptions(newOptions);
-    this.syncSettings(newOptions, options.equals(newOptions) ? sendTo.filter(con => con.getId() !== owner.getId()) : sendTo);
+    await this.syncSettings(newOptions, options.equals(newOptions) ? sendTo.filter(con => con.getId() !== owner.getId()) : sendTo);
   }
 
-  syncSettings(options: GameOptionsData, sendTo: Connection[]): void {
-    this.sendRpcPacket(new SyncSettingsPacket(options), sendTo);
+  async syncSettings(options: GameOptionsData, sendTo: Connection[]): Promise<void> {
+    await this.sendRpcPacket(new SyncSettingsPacket(options), sendTo);
   }
 
   async exile(): Promise<void> {
@@ -209,7 +201,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setDead(true);
-    this.sendRpcPacket(new ExiledPacket(), [this.getConnection()]);
+    await this.sendRpcPacket(new ExiledPacket(), [this.getConnection()]);
   }
 
   async handleCheckName(name: string, _sendTo?: Connection[]): Promise<void> {
@@ -221,20 +213,20 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     const player = lobby.findSafePlayerByConnection(owner);
     const connection = this.getConnection();
 
-    lobby.getHostInstance().ensurePlayerDataExists(player);
+    await lobby.getHostInstance().ensurePlayerDataExists(player);
 
     while (this.getLobby().getSafeGameData().getGameData().isNameTaken(checkName, this.getPlayerId())) {
       checkName = `${name} ${index++}`;
     }
 
-    player.setName(checkName);
+    await player.setName(checkName);
 
     await lobby.finishedSpawningPlayer(owner);
 
     if (lobby.getActingHosts().length === 0) {
-      connection.syncActingHost(true);
+      await connection.syncActingHost(true);
     } else if (connection.isActingHost()) {
-      (this.getLobby() as Lobby).sendEnableHost(connection, true);
+      await (this.getLobby() as Lobby).sendEnableHost(connection, true);
     }
   }
 
@@ -251,16 +243,16 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setName(event.getNewName().toString());
-    this.sendRpcPacket(new SetNamePacket(event.getNewName().toString()), sendTo);
+    await this.sendRpcPacket(new SetNamePacket(event.getNewName().toString()), sendTo);
   }
 
-  handleCheckColor(color: PlayerColor, _sendTo?: Connection[]): void {
+  async handleCheckColor(color: PlayerColor, _sendTo?: Connection[]): Promise<void> {
     const player = this.getLobby().findSafePlayerByClientId(this.getOwnerId());
     const numberOfColors = (Object.keys(PlayerColor).length / 2) - 1;
     const takenColors = this.getLobby().getSafeGameData().getGameData().getTakenColors(this.getPlayerId());
     let setColor: PlayerColor = color;
 
-    this.getLobby().getHostInstance().ensurePlayerDataExists(player);
+    await this.getLobby().getHostInstance().ensurePlayerDataExists(player);
 
     if (takenColors.size <= numberOfColors) {
       while (takenColors.has(setColor)) {
@@ -268,20 +260,20 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       }
     }
 
-    this.setColor(setColor, this.getLobby().getConnections());
+    await this.setColor(setColor, this.getLobby().getConnections());
   }
 
-  handleSetColor(color: PlayerColor, _sendTo?: Connection[]): void {
+  async handleSetColor(color: PlayerColor, _sendTo?: Connection[]): Promise<void> {
     const owner = this.getLobby().findSafeConnection(this.getOwnerId());
     const player = this.getLobby().findSafePlayerByConnection(owner);
 
-    this.getLobby().getHostInstance().ensurePlayerDataExists(player);
+    await this.getLobby().getHostInstance().ensurePlayerDataExists(player);
 
     if (owner.isActingHost()) {
-      this.setColor(color, this.getLobby().getConnections());
+      await this.setColor(color, this.getLobby().getConnections());
     } else {
-      // Fix desync
-      this.setColor(player.getColor(), this.getLobby().getConnections());
+      // TODO: Fix desync (?)
+      await this.setColor(player.getColor(), this.getLobby().getConnections());
     }
   }
 
@@ -298,7 +290,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setColor(event.getNewColor());
-    this.sendRpcPacket(new SetColorPacket(event.getNewColor()), sendTo);
+    await this.sendRpcPacket(new SetColorPacket(event.getNewColor()), sendTo);
   }
 
   async handleSetHat(hat: PlayerHat, sendTo?: Connection[]): Promise<void> {
@@ -314,7 +306,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setHat(event.getNewHat());
-    this.sendRpcPacket(new SetHatPacket(event.getNewHat()), sendTo);
+    await this.sendRpcPacket(new SetHatPacket(event.getNewHat()), sendTo);
   }
 
   async handleSetPet(pet: PlayerPet, sendTo?: Connection[]): Promise<void> {
@@ -330,7 +322,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setPet(event.getNewPet());
-    this.sendRpcPacket(new SetPetPacket(event.getNewPet()), sendTo);
+    await this.sendRpcPacket(new SetPetPacket(event.getNewPet()), sendTo);
   }
 
   async handleSetSkin(skin: PlayerSkin, sendTo?: Connection[]): Promise<void> {
@@ -346,7 +338,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
     }
 
     this.getPlayerData().setSkin(event.getNewSkin());
-    this.sendRpcPacket(new SetSkinPacket(event.getNewSkin()), sendTo);
+    await this.sendRpcPacket(new SetSkinPacket(event.getNewSkin()), sendTo);
   }
 
   async handleMurderPlayer(victimPlayerControlNetId: number, sendTo?: Connection[]): Promise<void> {
@@ -364,7 +356,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       return;
     }
 
-    this.sendRpcPacket(new MurderPlayerPacket(victimPlayerControlNetId), sendTo);
+    await this.sendRpcPacket(new MurderPlayerPacket(victimPlayerControlNetId), sendTo);
   }
 
   async handleSendChat(message: string, sendTo?: Connection[]): Promise<void> {
@@ -394,17 +386,17 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       }
     }
 
-    this.sendRpcPacket(new SendChatPacket(message), sendTo);
+    await this.sendRpcPacket(new SendChatPacket(message), sendTo);
   }
 
-  handleSetScanner(isScanning: boolean, sequenceId: number, sendTo?: Connection[]): void {
+  async handleSetScanner(isScanning: boolean, sequenceId: number, sendTo?: Connection[]): Promise<void> {
     if (sequenceId < ++this.scannerSequenceId) {
       return;
     }
 
     this.scanning = isScanning;
 
-    this.sendRpcPacket(new SetScannerPacket(isScanning, this.scannerSequenceId), sendTo);
+    await this.sendRpcPacket(new SetScannerPacket(isScanning, this.scannerSequenceId), sendTo);
   }
 
   async handleSendChatNote(playerId: number, chatNoteType: ChatNoteType, sendTo?: Connection[]): Promise<void> {
@@ -416,10 +408,10 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       return;
     }
 
-    this.sendRpcPacket(new SendChatNotePacket(playerId, chatNoteType), sendTo);
+    await this.sendRpcPacket(new SendChatNotePacket(playerId, chatNoteType), sendTo);
   }
 
-  handleUsePlatform(sender: InnerPlayerControl): void {
+  async handleUsePlatform(sender: InnerPlayerControl): Promise<void> {
     const shipStatus = this.getLobby().getSafeShipStatus();
     const oldData = shipStatus.getShipStatus().clone();
     const movingPlatform = shipStatus.getShipStatus().getSystems()[InternalSystemType.MovingPlatform] as MovingPlatformSystem;
@@ -428,7 +420,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       movingPlatform.ride(sender.getParent().getPlayerControl().getNetId());
     }
 
-    (this.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([
+    await (this.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([
       shipStatus.getShipStatus().serializeData(oldData),
     ], this.getLobby().getCode()));
   }
@@ -436,14 +428,14 @@ export class InnerPlayerControl extends BaseInnerNetObject {
   async handleRpc(connection: Connection, type: RpcPacketType, packet: BaseRpcPacket, sendTo: Connection[]): Promise<void> {
     switch (type) {
       case RpcPacketType.PlayAnimation:
-        this.handlePlayAnimation((packet as PlayAnimationPacket).taskType, sendTo);
+        await this.handlePlayAnimation((packet as PlayAnimationPacket).taskType, sendTo);
         break;
       case RpcPacketType.CompleteTask: {
-        this.handleCompleteTask((packet as CompleteTaskPacket).taskIndex, sendTo);
+        await this.handleCompleteTask((packet as CompleteTaskPacket).taskIndex, sendTo);
         break;
       }
       case RpcPacketType.SyncSettings:
-        this.handleSyncSettings((packet as SyncSettingsPacket).options, sendTo);
+        await this.handleSyncSettings((packet as SyncSettingsPacket).options, sendTo);
         break;
       case RpcPacketType.SetInfected:
         this.getLobby().getLogger().warn("Received SetInfected packet from connection %s in a server-as-host state", connection);
@@ -452,26 +444,26 @@ export class InnerPlayerControl extends BaseInnerNetObject {
         this.getLobby().getLogger().warn("Received Exiled packet from connection %s in a server-as-host state", connection);
         break;
       case RpcPacketType.CheckName:
-        this.handleCheckName((packet as CheckNamePacket).name);
+        await this.handleCheckName((packet as CheckNamePacket).name);
         break;
       case RpcPacketType.SetName:
         this.getLobby().getLogger().warn("Received SetName packet from connection %s in a server-as-host state", connection);
         break;
       case RpcPacketType.CheckColor:
-        this.handleCheckColor((packet as CheckColorPacket).color);
+        await this.handleCheckColor((packet as CheckColorPacket).color);
         break;
       case RpcPacketType.SetColor:
-        this.handleSetColor((packet as SetColorPacket).color);
+        await this.handleSetColor((packet as SetColorPacket).color);
         break;
       case RpcPacketType.SetHat:
-        this.handleSetHat((packet as SetHatPacket).hat, sendTo);
+        await this.handleSetHat((packet as SetHatPacket).hat, sendTo);
         break;
       case RpcPacketType.SetSkin:
-        this.handleSetSkin((packet as SetSkinPacket).skin, sendTo);
+        await this.handleSetSkin((packet as SetSkinPacket).skin, sendTo);
         break;
       case RpcPacketType.ReportDeadBody:
         // TODO: InnerNetObject refactor
-        this.getLobby().getHostInstance().handleReportDeadBody(this, (packet as ReportDeadBodyPacket).victimPlayerId);
+        await this.getLobby().getHostInstance().handleReportDeadBody(this, (packet as ReportDeadBodyPacket).victimPlayerId);
         break;
       case RpcPacketType.MurderPlayer: {
         const data = packet as MurderPlayerPacket;
@@ -479,11 +471,11 @@ export class InnerPlayerControl extends BaseInnerNetObject {
         await this.handleMurderPlayer(data.victimPlayerControlNetId, sendTo);
 
         // TODO: InnerNetObject refactor
-        this.getLobby().getHostInstance().handleMurderPlayer(this, data.victimPlayerControlNetId);
+        await this.getLobby().getHostInstance().handleMurderPlayer(this, data.victimPlayerControlNetId);
         break;
       }
       case RpcPacketType.SendChat:
-        this.handleSendChat((packet as SendChatPacket).message, sendTo);
+        await this.handleSendChat((packet as SendChatPacket).message, sendTo);
         break;
       case RpcPacketType.StartMeeting:
         this.getLobby().getLogger().warn("Received StartMeeting packet from connection %s in a server-as-host state", connection);
@@ -491,23 +483,23 @@ export class InnerPlayerControl extends BaseInnerNetObject {
       case RpcPacketType.SetScanner: {
         const data = packet as SetScannerPacket;
 
-        this.handleSetScanner(data.isScanning, data.sequenceId, sendTo);
+        await this.handleSetScanner(data.isScanning, data.sequenceId, sendTo);
         break;
       }
       case RpcPacketType.SendChatNote: {
         const data = packet as SendChatNotePacket;
 
-        this.handleSendChatNote(data.playerId, data.chatNoteType, sendTo);
+        await this.handleSendChatNote(data.playerId, data.chatNoteType, sendTo);
         break;
       }
       case RpcPacketType.SetPet:
-        this.handleSetPet((packet as SetPetPacket).pet, sendTo);
+        await this.handleSetPet((packet as SetPetPacket).pet, sendTo);
         break;
       case RpcPacketType.SetStartCounter: {
         // TODO: InnerNetObject refactor
         const data = packet as SetStartCounterPacket;
 
-        this.getLobby().getHostInstance().handleSetStartCounter(
+        await this.getLobby().getHostInstance().handleSetStartCounter(
           this.getLobby().findSafePlayerByClientId(this.getOwnerId()),
           data.sequenceId,
           data.timeRemaining,
@@ -515,7 +507,7 @@ export class InnerPlayerControl extends BaseInnerNetObject {
         break;
       }
       case RpcPacketType.UsePlatform:
-        this.handleUsePlatform(this);
+        await this.handleUsePlatform(this);
         break;
       default:
         break;

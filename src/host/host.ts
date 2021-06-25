@@ -151,7 +151,7 @@ export class Host implements HostInstance {
       const connection = starter?.getConnection();
 
       if (connection !== undefined) {
-        this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
+        await this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
           new SetStartCounterPacket(this.counterSequenceId += 5, -1),
           [connection],
         );
@@ -162,11 +162,11 @@ export class Host implements HostInstance {
 
     this.secondsUntilStart = event.getSecondsUntilStart();
 
-    const countdownFunction = (): void => {
+    const countdownFunction = async (): Promise<void> => {
       const time = this.secondsUntilStart--;
 
       if (this.lobby.getPlayers().length > 0) {
-        this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
+        await this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
           new SetStartCounterPacket(this.counterSequenceId += 5, time),
           this.lobby.getConnections(),
         );
@@ -178,11 +178,11 @@ export class Host implements HostInstance {
           delete this.countdownInterval;
         }
 
-        this.startGame();
+        await this.startGame();
       }
     };
 
-    this.lobby.disableActingHosts(true);
+    await this.lobby.disableActingHosts(true);
     countdownFunction();
 
     this.countdownInterval = setInterval(countdownFunction, 1000);
@@ -209,7 +209,7 @@ export class Host implements HostInstance {
     this.secondsUntilStart = -1;
 
     if (this.lobby.getPlayers().length > 0) {
-      this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
+      await this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
         new SetStartCounterPacket(this.counterSequenceId += 5, -1),
         this.lobby.getConnections(),
       );
@@ -234,8 +234,8 @@ export class Host implements HostInstance {
     }
 
     this.lobby.cancelStartTimer();
-    this.lobby.disableActingHosts(true);
-    this.lobby.sendRootGamePacket(new StartGamePacket(this.lobby.getCode()));
+    await this.lobby.disableActingHosts(true);
+    await this.lobby.sendRootGamePacket(new StartGamePacket(this.lobby.getCode()));
   }
 
   async setInfected(infectedCount: number): Promise<void> {
@@ -281,13 +281,13 @@ export class Host implements HostInstance {
       impostors[i].setRole(PlayerRole.Impostor);
     }
 
-    this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
+    await this.lobby.getPlayers()[0].getEntity().getPlayerControl().sendRpcPacket(
       new SetInfectedPacket(impostors.map(player => player.getId())),
       this.lobby.getConnections(),
     );
   }
 
-  setTasks(): void {
+  async setTasks(): Promise<void> {
     /**
      * This implementation is ported directly from Among Us to be as close to
      * the original as possible.
@@ -361,7 +361,7 @@ export class Host implements HostInstance {
       const player = this.lobby.getPlayers().find(pl => pl.getId() == pid);
 
       if (player !== undefined) {
-        this.setPlayerTasks(player, tasks);
+        await this.setPlayerTasks(player, tasks);
       }
     }
   }
@@ -395,7 +395,6 @@ export class Host implements HostInstance {
       const player = this.lobby.findPlayerByPlayerId(playerId);
 
       if (player === undefined) {
-
         return;
       }
 
@@ -471,13 +470,13 @@ export class Host implements HostInstance {
       }
     }
 
-    meetingHud.getMeetingHud().sendRpcPacket(new VotingCompletePacket(
+    await meetingHud.getMeetingHud().sendRpcPacket(new VotingCompletePacket(
       meetingHud.getMeetingHud().getPlayerStates(),
       isTied || exiledPlayer === undefined ? 0xff : exiledPlayer.getId(),
       isTied,
     ), this.lobby.getConnections());
 
-    this.lobby.sendRootGamePacket(new GameDataPacket([
+    await this.lobby.sendRootGamePacket(new GameDataPacket([
       meetingHud.getMeetingHud().serializeData(oldMeetingHud),
     ], this.lobby.getCode()));
 
@@ -495,7 +494,7 @@ export class Host implements HostInstance {
         return;
       }
 
-      meetingHud.getMeetingHud().sendRpcPacket(new ClosePacket(), this.lobby.getConnections());
+      await meetingHud.getMeetingHud().sendRpcPacket(new ClosePacket(), this.lobby.getConnections());
 
       this.lobby.deleteMeetingHud();
 
@@ -521,16 +520,16 @@ export class Host implements HostInstance {
     }, 5000);
   }
 
-  checkForTaskWin(): void {
+  async checkForTaskWin(): Promise<void> {
     const gameData = this.lobby.getSafeGameData();
     const crewmates = [...gameData.getGameData().getPlayers().values()].filter(playerData => !playerData.isImpostor());
 
     if (crewmates.every(crewmate => crewmate.isDoneWithTasks())) {
-      this.endGame(GameOverReason.CrewmatesByTask);
+      await this.endGame(GameOverReason.CrewmatesByTask);
     }
   }
 
-  async endGame(reason: GameOverReason): Promise<void> {
+  async endGame(reason: GameOverReason): Promise<boolean> {
     if (this.lobby.getGameState() !== GameState.Started) {
       throw new Error("Attempted to end a game that is not in progress");
     }
@@ -540,7 +539,7 @@ export class Host implements HostInstance {
     await this.lobby.getServer().emit("game.ended", event);
 
     if (event.isCancelled()) {
-      return;
+      return false;
     }
 
     this.lobby.setGameState(GameState.NotStarted);
@@ -575,10 +574,12 @@ export class Host implements HostInstance {
     delete this.systemsHandler;
 
     this.lobby.setGameData(new EntityGameData(this.lobby));
-    this.lobby.sendRootGamePacket(new EndGamePacket(this.lobby.getCode(), event.getReason(), false));
+    await this.lobby.sendRootGamePacket(new EndGamePacket(this.lobby.getCode(), event.getReason(), false));
+
+    return true;
   }
 
-  ensurePlayerDataExists(player: PlayerInstance): void {
+  async ensurePlayerDataExists(player: PlayerInstance): Promise<void> {
     const gameData = this.lobby.getSafeGameData();
 
     if (![...gameData.getGameData().getPlayers().values()].some(p => p.getId() == player.getId())) {
@@ -595,7 +596,7 @@ export class Host implements HostInstance {
         [],
       );
 
-      gameData.getGameData().updateGameData([playerData], this.lobby.getConnections());
+      await gameData.getGameData().updateGameData([playerData], this.lobby.getConnections());
     }
   }
 
@@ -615,25 +616,25 @@ export class Host implements HostInstance {
     return this.decontaminationHandlers;
   }
 
-  handleImpostorDeath(): void {
+  async handleImpostorDeath(): Promise<void> {
     if (this.shouldEndGame()) {
-      this.endGame(GameOverReason.CrewmatesByVote);
+      await this.endGame(GameOverReason.CrewmatesByVote);
     }
   }
 
-  handleDisconnect(connection: Connection, _reason?: DisconnectReason): void {
+  async handleDisconnect(connection: Connection, _reason?: DisconnectReason): Promise<void> {
     const gameState = this.lobby.getGameState();
     const gameData = this.lobby.getGameData();
 
     this.readyPlayerList.delete(connection.getId());
 
     if (gameState == GameState.NotStarted) {
-      this.stopCountdown();
+      await this.stopCountdown();
 
       if (this.lobby.getGame() === undefined) {
-        this.lobby.enableActingHosts(true);
+        await this.lobby.enableActingHosts(true);
       } else {
-        this.handleReady();
+        await this.handleReady();
       }
     }
 
@@ -661,14 +662,14 @@ export class Host implements HostInstance {
       gameData.getGameData().removePlayer(player.getId());
     }
 
-    gameData.getGameData().updateAllGameData(this.lobby.getConnections());
+    await gameData.getGameData().updateAllGameData(this.lobby.getConnections());
     gameData.getVoteBanSystem().removeVotesForPlayer(connection.getId());
 
     if (this.shouldEndGame()) {
       if (playerData.isImpostor()) {
-        this.endGame(GameOverReason.ImpostorDisconnect);
+        await this.endGame(GameOverReason.ImpostorDisconnect);
       } else {
-        this.endGame(GameOverReason.CrewmateDisconnect);
+        await this.endGame(GameOverReason.CrewmateDisconnect);
       }
     }
   }
@@ -699,7 +700,7 @@ export class Host implements HostInstance {
     const lobbyBehaviour = this.lobby.getLobbyBehaviour();
 
     if (lobbyBehaviour !== undefined) {
-      this.lobby.despawn(lobbyBehaviour.getLobbyBehaviour());
+      await this.lobby.despawn(lobbyBehaviour.getLobbyBehaviour());
       this.lobby.deleteLobbyBehaviour();
     }
 
@@ -763,20 +764,25 @@ export class Host implements HostInstance {
 
     const gameData = this.lobby.getSafeGameData();
 
-    this.lobby.sendRootGamePacket(new GameDataPacket([this.lobby.getSafeShipStatus().serializeSpawn()], this.lobby.getCode()));
+    await this.lobby.sendRootGamePacket(new GameDataPacket([this.lobby.getSafeShipStatus().serializeSpawn()], this.lobby.getCode()));
     this.lobby.setGameState(GameState.Started);
     await this.setInfected(this.lobby.getOptions().getImpostorCount());
-    this.setTasks();
-    gameData.getGameData().updateAllGameData(connections);
+    await this.setTasks();
+    await gameData.getGameData().updateAllGameData(connections);
 
     const players = this.lobby.getPlayers();
+    const promiseArray: Promise<void>[] = [];
 
     for (let i = 0; i < players.length; i++) {
-      players[i].setPosition(
-        SpawnPositions.forPlayerOnLevel(this.lobby.getLevel(), players[i].getId(), players.length, true),
-        TeleportReason.GameStart,
+      promiseArray.push(
+        players[i].setPosition(
+          SpawnPositions.forPlayerOnLevel(this.lobby.getLevel(), players[i].getId(), players.length, true),
+          TeleportReason.GameStart,
+        ),
       );
     }
+
+    await Promise.allSettled(promiseArray);
   }
 
   async handleSceneChange(connection: Connection, sceneName: string): Promise<void> {
@@ -798,7 +804,7 @@ export class Host implements HostInstance {
       return;
     }
 
-    this.stopCountdown();
+    await this.stopCountdown();
     this.playersInScene.set(connection.getId(), sceneName);
 
     let lobbyBehaviour = this.lobby.getLobbyBehaviour();
@@ -811,9 +817,9 @@ export class Host implements HostInstance {
     }
 
     if (lobbyBehaviour !== undefined) {
-      connection.writeReliable(new GameDataPacket([lobbyBehaviour.serializeSpawn()], this.lobby.getCode()));
+      await connection.writeReliable(new GameDataPacket([lobbyBehaviour.serializeSpawn()], this.lobby.getCode()));
     } else if (shipStatus !== undefined) {
-      connection.writeReliable(new GameDataPacket([shipStatus.serializeSpawn()], this.lobby.getCode()));
+      await connection.writeReliable(new GameDataPacket([shipStatus.serializeSpawn()], this.lobby.getCode()));
     } else {
       throw new Error("Received SceneChange without a LobbyBehaviour or ShipStatus instance");
     }
@@ -826,7 +832,7 @@ export class Host implements HostInstance {
       this.lobby.setGameData(gameData);
     }
 
-    connection.writeReliable(new GameDataPacket([gameData.serializeSpawn()], this.lobby.getCode()));
+    await connection.writeReliable(new GameDataPacket([gameData.serializeSpawn()], this.lobby.getCode()));
 
     const event = new PlayerSpawnedEvent(connection, this.lobby, newPlayerId, true, SpawnPositions.forPlayerInDropship(newPlayerId));
 
@@ -854,12 +860,12 @@ export class Host implements HostInstance {
     }
 
     for (let i = 0; i < this.lobby.getPlayers().length; i++) {
-      connection.writeReliable(new GameDataPacket([this.lobby.getPlayers()[i].getEntity().serializeSpawn()], this.lobby.getCode()));
+      await connection.writeReliable(new GameDataPacket([this.lobby.getPlayers()[i].getEntity().serializeSpawn()], this.lobby.getCode()));
     }
 
-    (this.lobby.getPlayers()[0] as Player).getEntity().getPlayerControl().syncSettings(this.lobby.getOptions(), [connection]);
-    connection.flush(true);
-    gameData.getGameData().updateAllGameData(this.lobby.getConnections());
+    await (this.lobby.getPlayers()[0] as Player).getEntity().getPlayerControl().syncSettings(this.lobby.getOptions(), [connection]);
+    await connection.flush(true);
+    await gameData.getGameData().updateAllGameData(this.lobby.getConnections());
   }
 
   async handleReportDeadBody(sender: InnerPlayerControl, victimPlayerId?: number): Promise<void> {
@@ -897,7 +903,7 @@ export class Host implements HostInstance {
       this.systemsHandler?.repairAll();
     }
 
-    sender.sendRpcPacket(new StartMeetingPacket(event.getVictim()?.getId() ?? 0xff), this.lobby.getConnections());
+    await sender.sendRpcPacket(new StartMeetingPacket(event.getVictim()?.getId() ?? 0xff), this.lobby.getConnections());
 
     const meetingHud = new EntityMeetingHud(this.lobby);
     const playerData = gameData.getGameData().getPlayers();
@@ -911,29 +917,34 @@ export class Host implements HostInstance {
       ));
     }
 
-    this.lobby.sendRootGamePacket(new GameDataPacket([
+    await this.lobby.sendRootGamePacket(new GameDataPacket([
       meetingHud.serializeSpawn(),
     ], this.lobby.getCode()));
 
     const players = this.lobby.getPlayers();
+    const promiseArray: Promise<void>[] = [];
 
     for (let i = 0; i < players.length; i++) {
-      players[i].setPosition(
-        SpawnPositions.forPlayerOnLevel(this.lobby.getLevel(), players[i].getId(), players.length, false),
-        TeleportReason.MeetingStart,
+      promiseArray.push(
+        players[i].setPosition(
+          SpawnPositions.forPlayerOnLevel(this.lobby.getLevel(), players[i].getId(), players.length, false),
+          TeleportReason.MeetingStart,
+        ),
       );
     }
+
+    await Promise.allSettled(promiseArray);
 
     this.meetingHudTimeout = setTimeout(this.endMeeting.bind(this), (this.lobby.getOptions().getVotingTime() + this.lobby.getOptions().getDiscussionTime()) * 1000);
   }
 
-  handleMurderPlayer(_sender: InnerPlayerControl, _victimPlayerControlNetId: number): void {
+  async handleMurderPlayer(_sender: InnerPlayerControl, _victimPlayerControlNetId: number): Promise<void> {
     if (this.shouldEndGame()) {
-      this.endGame(GameOverReason.ImpostorsByKill);
+      await this.endGame(GameOverReason.ImpostorsByKill);
     }
   }
 
-  handleSetStartCounter(player: PlayerInstance, sequenceId: number, timeRemaining: number): void {
+  async handleSetStartCounter(player: PlayerInstance, sequenceId: number, timeRemaining: number): Promise<void> {
     if (timeRemaining == -1) {
       return;
     }
@@ -943,7 +954,7 @@ export class Host implements HostInstance {
     // TODO: Add an event for plugins to allow non-hosts to start games
     if (!(connection?.isActingHost() ?? false)) {
       if (connection !== undefined) {
-        (player as Player).getEntity().getPlayerControl().sendRpcPacket(
+        await (player as Player).getEntity().getPlayerControl().sendRpcPacket(
           new SetStartCounterPacket(this.counterSequenceId += 5, -1),
           [connection],
         );
@@ -958,7 +969,7 @@ export class Host implements HostInstance {
     }
 
     if (timeRemaining == 5) {
-      this.startCountdown(this.lobby.getStartTimerDuration(), player);
+      await this.startCountdown(this.lobby.getStartTimerDuration(), player);
     }
   }
 
@@ -977,7 +988,7 @@ export class Host implements HostInstance {
       const connection = player.getConnection();
 
       if (connection !== undefined) {
-        meetingHud.getMeetingHud().sendRpcPacket(new ClearVotePacket(), [connection]);
+        await meetingHud.getMeetingHud().sendRpcPacket(new ClearVotePacket(), [connection]);
       }
 
       return;
@@ -992,15 +1003,15 @@ export class Host implements HostInstance {
 
     state.setVotedFor(suspectPlayerId);
 
-    this.lobby.sendRootGamePacket(new GameDataPacket([
+    await this.lobby.sendRootGamePacket(new GameDataPacket([
       meetingHud.getMeetingHud().serializeData(oldMeetingHud),
       new RpcPacket(player.getEntity().getPlayerControl().getNetId(), new SendChatNotePacket(event.getVoter().getId(), ChatNoteType.DidVote)),
     ], this.lobby.getCode()));
 
     if (this.meetingHudTimeout !== undefined && [...meetingHud.getMeetingHud().getPlayerStates().values()].every(p => p.didVote() || p.isDead())) {
-      this.endMeeting();
       clearTimeout(this.meetingHudTimeout);
       delete this.meetingHudTimeout;
+      await this.endMeeting();
     }
   }
 
@@ -1011,10 +1022,8 @@ export class Host implements HostInstance {
    * @param player - The player whose task list will be updates
    * @param tasks - The player's new tasks
    */
-  updatePlayerTasks(player: PlayerInstance, tasks: LevelTask[]): this {
-    this.lobby.getSafeGameData().getGameData().setTasks(player.getId(), tasks.map(task => task.id), this.lobby.getConnections());
-
-    return this;
+  async updatePlayerTasks(player: PlayerInstance, tasks: LevelTask[]): Promise<void> {
+    await this.lobby.getSafeGameData().getGameData().setTasks(player.getId(), tasks.map(task => task.id), this.lobby.getConnections());
   }
 
   /**
@@ -1033,7 +1042,7 @@ export class Host implements HostInstance {
     tasks: LevelTask[],
     usedTaskTypes: Set<TaskType>,
     unusedTasks: LevelTask[],
-  ): this {
+  ): void {
     // A separate counter to prevent the following loop from running forever
     let sanityCheck = 0;
 
@@ -1076,8 +1085,6 @@ export class Host implements HostInstance {
         tasks.push(task);
       }
     }
-
-    return this;
   }
 
   /**

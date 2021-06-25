@@ -42,11 +42,11 @@ export class InnerCustomNetworkTransform extends BaseInnerNetObject {
     return this;
   }
 
-  walkTo(position: Vector2, velocity: Vector2 = Vector2.zero()): void {
+  async walkTo(position: Vector2, velocity: Vector2 = Vector2.zero()): Promise<void> {
     this.setPosition(position);
     this.setVelocity(velocity);
     this.incrementSequenceId(1);
-    (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([
+    await (this.parent.getLobby() as Lobby).sendRootGamePacket(new GameDataPacket([
       this.serializeData(),
     ], this.parent.getLobby().getCode()));
   }
@@ -69,7 +69,7 @@ export class InnerCustomNetworkTransform extends BaseInnerNetObject {
       const connection = player.getConnection();
 
       if (connection !== undefined) {
-        this.sendRpcPacket(new SnapToPacket(this.position, this.incrementSequenceId(5)), [connection]);
+        await this.sendRpcPacket(new SnapToPacket(this.position, this.incrementSequenceId(5)), [connection]);
       }
 
       return;
@@ -78,7 +78,7 @@ export class InnerCustomNetworkTransform extends BaseInnerNetObject {
     this.position = event.getNewPosition();
     this.velocity = event.getNewVelocity();
 
-    this.sendRpcPacket(new SnapToPacket(this.position, this.sequenceId), sendTo);
+    await this.sendRpcPacket(new SnapToPacket(this.position, this.sequenceId), sendTo);
   }
 
   handleRpc(connection: Connection, type: RpcPacketType, packet: BaseRpcPacket, sendTo: Connection[]): void {
@@ -127,7 +127,7 @@ export class InnerCustomNetworkTransform extends BaseInnerNetObject {
       const connection = player.getConnection();
 
       if (connection !== undefined) {
-        this.sendRpcPacket(new SnapToPacket(this.position, this.incrementSequenceId(5)), [connection]);
+        await this.sendRpcPacket(new SnapToPacket(this.position, this.incrementSequenceId(5)), [connection]);
       }
 
       return;

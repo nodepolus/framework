@@ -46,7 +46,7 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param name - The player's new name
    */
-  setName(name: TextComponent | string): this;
+  setName(name: TextComponent | string): Promise<void>;
 
   /**
    * Gets the player's color.
@@ -58,7 +58,7 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param color - The player's new color
    */
-  setColor(color: PlayerColor): this;
+  setColor(color: PlayerColor): Promise<void>;
 
   /**
    * Gets the player's hat.
@@ -70,7 +70,7 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param hat - The player's new hat
    */
-  setHat(hat: PlayerHat): this;
+  setHat(hat: PlayerHat): Promise<void>;
 
   /**
    * Gets the player's pet.
@@ -82,7 +82,7 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param pet - The player's new pet
    */
-  setPet(pet: PlayerPet): this;
+  setPet(pet: PlayerPet): Promise<void>;
 
   /**
    * Gets the player's skin.
@@ -94,7 +94,7 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param skin - The player's new skin
    */
-  setSkin(skin: PlayerSkin): this;
+  setSkin(skin: PlayerSkin): Promise<void>;
 
   /**
    * Gets the player's role.
@@ -107,7 +107,7 @@ export interface PlayerInstance extends Metadatable {
    * @experimental
    * @param role - The player's new role
    */
-  setRole(role: PlayerRole): this;
+  setRole(role: PlayerRole): void;
 
   /**
    * Gets whether or not the player is an Impostor.
@@ -119,14 +119,14 @@ export interface PlayerInstance extends Metadatable {
   /**
    * Sets the player's role to Impostor.
    */
-  setImpostor(): void;
+  setImpostor(): Promise<void>;
 
   /**
    * Sets the player's role to Crewmate.
    *
    * @experimental
    */
-  setCrewmate(): void;
+  setCrewmate(): Promise<void>;
 
   /**
    * Gets whether or not the player is dead.
@@ -145,21 +145,21 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param tasks - The player's new tasks
    */
-  setTasks(tasks: Set<LevelTask>): this;
+  setTasks(tasks: Set<LevelTask>): Promise<void>;
 
   /**
    * Adds the given tasks to the player's tasks.
    *
    * @param tasks - The tasks to be added
    */
-  addTasks(tasks: Set<LevelTask>): void;
+  addTasks(tasks: Set<LevelTask>): Promise<void>
 
   /**
    * Removes the given tasks from the player's tasks.
    *
    * @param tasks - The tasks to be removed
    */
-  removeTasks(tasks: Set<LevelTask>): void;
+  removeTasks(tasks: Set<LevelTask>): Promise<void>;
 
   /**
    * Gets whether or not the player has completed the task at the given index.
@@ -182,28 +182,28 @@ export interface PlayerInstance extends Metadatable {
    *
    * @param taskIndex - The index whose task will be marked as complete
    */
-  completeTaskAtIndex(taskIndex: number): this;
+  completeTaskAtIndex(taskIndex: number): Promise<void>;
 
   /**
    * Marks the given task as complete for the player.
    *
    * @param task - The task to marked as complete
    */
-  completeTask(task: LevelTask): this;
+  completeTask(task: LevelTask): Promise<void>;
 
   /**
    * Marks the task at the given index as incomplete for the player.
    *
    * @param taskIndex - The index whose task will be marked as incomplete
    */
-  uncompleteTaskAtIndex(taskIndex: number): void;
+  uncompleteTaskAtIndex(taskIndex: number): Promise<void>;
 
   /**
    * Marks the given task as incomplete for the player.
    *
    * @param task - The task to marked as incomplete
    */
-  uncompleteTask(task: LevelTask): void;
+  uncompleteTask(task: LevelTask): Promise<void>;
 
   /**
    * Gets the player's position.
@@ -216,7 +216,7 @@ export interface PlayerInstance extends Metadatable {
    * @param position - The player's new position
    * @param reason - The reason for why the player's position was updated
    */
-  setPosition(position: Vector2, reason: TeleportReason): this;
+  setPosition(position: Vector2, reason: TeleportReason): Promise<void>;
 
   /**
    * Gets the player's velocity.
@@ -236,7 +236,7 @@ export interface PlayerInstance extends Metadatable {
    * @experimental
    * @param vent - The vent to be entered
    */
-  enterVent(vent: LevelVent): this;
+  enterVent(vent: LevelVent): Promise<void>;
 
   /**
    * Forces the player to exit the given vent.
@@ -244,7 +244,7 @@ export interface PlayerInstance extends Metadatable {
    * @experimental
    * @param vent - The vent to be exited
    */
-  exitVent(vent: LevelVent): this;
+  exitVent(vent: LevelVent): Promise<void>;
 
   /**
    * Gets whether or not the player is getting scanned on a Medbay scanner.
@@ -256,83 +256,83 @@ export interface PlayerInstance extends Metadatable {
   /**
    * Kills the player with no animation or body.
    */
-  kill(): this;
+  kill(): Promise<void>;
 
   /**
    * Kills the player as though they were murdered by the given player.
    *
    * @param player - The player whose character will show in the kill animation
    */
-  murder(player: PlayerInstance): this;
+  murder(player: PlayerInstance): Promise<void>;
 
   /**
    * Revives the player.
    */
-  revive(): void;
+  revive(): Promise<void>;
 
   /**
    * Forces the player to send a message.
    *
    * @param message - The message to be sent
    */
-  sendChat(message: string): this;
+  sendChat(message: string): Promise<void>;
 
   /**
    * Forces the player to call an emergency meeting.
    *
    * @param victim - The body to be reported, or `undefined` to call an emergency meeting (default `undefined`)
    */
-  startMeeting(victim?: PlayerInstance): this;
+  startMeeting(victim?: PlayerInstance): Promise<void>;
 
   /**
    * Forces the player to cast a vote to exile the given player.
    *
    * @param suspect - The player to be voted for, or `undefined` to vote to skip (default `undefined`)
    */
-  castVote(suspect?: PlayerInstance): this;
+  castVote(suspect?: PlayerInstance): Promise<void>;
 
   /**
    * Clears the player's vote during a meeting.
    */
-  clearVote(): this;
+  clearVote(): Promise<void>;
 
   /**
    * Forces the player to cast a vote to kick the given player from the lobby.
    *
    * @param target - The player who will be voted to be kicked from the lobby
    */
-  castVotekick(target: PlayerInstance): this;
+  castVoteKick(target: PlayerInstance): Promise<void>;
 
   /**
    * Clears the player's vote to kick the given player from the lobby.
    *
    * @param target - The player whose vote to kick from the lobby will be cleared
    */
-  clearVotekick(target: PlayerInstance): this;
+  clearVoteKick(target: PlayerInstance): Promise<void>;
 
   /**
    * Clears all of the player's votes to kick other players from the lobby.
    */
-  clearVotekicksForMe(): this;
+  clearVoteKicksForMe(): Promise<void>;
 
   /**
    * Clears all other player's votes to kick the player from the lobby.
    */
-  clearVotekicksFromMe(): this;
+  clearVoteKicksFromMe(): Promise<void>;
 
   /**
    * Kicks the player from the lobby.
    *
    * @param reason - The reason for why the player was kicked
    */
-  kick(reason?: DisconnectReason): this;
+  kick(reason?: DisconnectReason): Promise<void>;
 
   /**
    * Bans the player from the lobby.
    *
    * @param reason - The reason for why the player was banned
    */
-  ban(reason?: DisconnectReason): this;
+  ban(reason?: DisconnectReason): Promise<void>;
 
   /**
    * Gets the player's PlayerData object from the GameData instance.
@@ -342,5 +342,5 @@ export interface PlayerInstance extends Metadatable {
   /**
    * Updates the player's PlayerData object in the GameData instance.
    */
-  updateGameData(): void;
+  updateGameData(): Promise<void>;
 }

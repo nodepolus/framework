@@ -43,7 +43,7 @@ export class InnerPlayerPhysics extends BaseInnerNetObject {
 
       if (connection !== undefined) {
         // TODO: Add delay
-        this.sendRpcPacket(new ExitVentPacket(vent.getId()), [connection]);
+        await this.sendRpcPacket(new ExitVentPacket(vent.getId()), [connection]);
       }
 
       return;
@@ -51,7 +51,7 @@ export class InnerPlayerPhysics extends BaseInnerNetObject {
 
     this.vent = vent;
 
-    this.sendRpcPacket(new EnterVentPacket(vent.getId()), sendTo);
+    await this.sendRpcPacket(new EnterVentPacket(vent.getId()), sendTo);
   }
 
   async handleExitVent(vent: LevelVent | undefined, sendTo?: Connection[]): Promise<void> {
@@ -73,7 +73,7 @@ export class InnerPlayerPhysics extends BaseInnerNetObject {
 
       if (connection !== undefined) {
         // TODO: Add delay
-        this.sendRpcPacket(new EnterVentPacket(vent.getId()), [connection]);
+        await this.sendRpcPacket(new EnterVentPacket(vent.getId()), [connection]);
       }
 
       return;
@@ -81,10 +81,10 @@ export class InnerPlayerPhysics extends BaseInnerNetObject {
 
     this.vent = undefined;
 
-    this.sendRpcPacket(new ExitVentPacket(vent.getId()), sendTo);
+    await this.sendRpcPacket(new ExitVentPacket(vent.getId()), sendTo);
   }
 
-  handleClimbLadder(ladder: number, sequenceId: number, sendTo?: Connection[]): void {
+  async handleClimbLadder(ladder: number, sequenceId: number, sendTo?: Connection[]): Promise<void> {
     const wrap = (this.lastLadderSequenceId + 127) % 256;
     let isOldSidGreaterThanSid = false;
 
@@ -98,7 +98,7 @@ export class InnerPlayerPhysics extends BaseInnerNetObject {
       return;
     }
 
-    this.sendRpcPacket(new ClimbLadderPacket(ladder, sequenceId), sendTo);
+    await this.sendRpcPacket(new ClimbLadderPacket(ladder, sequenceId), sendTo);
   }
 
   handleRpc(connection: Connection, type: RpcPacketType, packet: BaseRpcPacket, sendTo: Connection[]): void {

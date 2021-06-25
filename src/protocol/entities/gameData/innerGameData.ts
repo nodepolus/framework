@@ -22,10 +22,8 @@ export class InnerGameData extends BaseInnerNetObject {
     return sorted ? new Map([...this.players.entries()].sort((a, b) => a[0] - b[0])) : this.players;
   }
 
-  setPlayers(players: Map<number, PlayerData>): this {
+  setPlayers(players: Map<number, PlayerData>): void {
     this.players = players;
-
-    return this;
   }
 
   getPlayer(playerId: number): PlayerData | undefined {
@@ -42,16 +40,12 @@ export class InnerGameData extends BaseInnerNetObject {
     return player;
   }
 
-  addPlayer(playerData: PlayerData): this {
+  addPlayer(playerData: PlayerData): void {
     this.players.set(playerData.getId(), playerData);
-
-    return this;
   }
 
-  removePlayer(playerId: number): this {
+  removePlayer(playerId: number): void {
     this.players.delete(playerId);
-
-    return this;
   }
 
   /**
@@ -112,7 +106,7 @@ export class InnerGameData extends BaseInnerNetObject {
     return takenColors;
   }
 
-  setTasks(playerId: number, taskIds: number[], sendTo?: Connection[]): this {
+  async setTasks(playerId: number, taskIds: number[], sendTo?: Connection[]): Promise<void> {
     const tasks = Tasks.forLevelFromId(this.parent.getLobby().getLevel(), taskIds);
     const player = this.players.get(playerId);
 
@@ -129,16 +123,14 @@ export class InnerGameData extends BaseInnerNetObject {
       player.setTasks(newTasks);
     }
 
-    this.sendRpcPacket(new SetTasksPacket(playerId, taskIds), sendTo);
-
-    return this;
+    await this.sendRpcPacket(new SetTasksPacket(playerId, taskIds), sendTo);
   }
 
-  updateAllGameData(sendTo?: Connection[]): this {
-    return this.updateGameData(undefined, sendTo);
+  async updateAllGameData(sendTo?: Connection[]): Promise<void> {
+    return await this.updateGameData(undefined, sendTo);
   }
 
-  updateGameData(playerData?: PlayerData[], sendTo?: Connection[]): this {
+  async updateGameData(playerData?: PlayerData[], sendTo?: Connection[]): Promise<void> {
     playerData ??= [...this.players.values()];
 
     for (let i = 0; i < playerData.length; i++) {
@@ -147,12 +139,10 @@ export class InnerGameData extends BaseInnerNetObject {
       this.players.set(player.getId(), player);
     }
 
-    this.getLobby().sendRootGamePacket(
+    await this.getLobby().sendRootGamePacket(
       new GameDataPacket([this.serializeData()], this.getLobby().getCode()),
       sendTo ?? this.getLobby().getConnections(),
     );
-
-    return this;
   }
 
   handleRpc(connection: Connection, type: RpcPacketType, _packet: BaseRpcPacket, _sendTo: Connection[]): void {

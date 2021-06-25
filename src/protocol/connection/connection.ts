@@ -388,7 +388,7 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
         return;
       }
 
-      this.lobby.sendEnableHost(this, sendImmediately);
+      await this.lobby.sendEnableHost(this, sendImmediately);
     } else {
       const event = new LobbyHostRemovedEvent(this.lobby, this);
 
@@ -398,7 +398,7 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
         return;
       }
 
-      this.lobby.sendDisableHost(this, sendImmediately);
+      await this.lobby.sendDisableHost(this, sendImmediately);
     }
   }
 
@@ -449,7 +449,7 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
   /**
    * Sends the given packet immediately as a reliable packet.
    *
-   * @param packet - The packet to be sent
+   * @param packets - The packets to be sent
    */
   async sendReliable(packets: BaseRootPacket[]): Promise<void> {
     return new Promise(resolve => {
@@ -466,14 +466,14 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
   /**
    * Sends the given packet immediately as an unreliable packet.
    *
-   * @param packet - The packet to be sent
+   * @param packets - The packets to be sent
    */
-  sendUnreliable(packets: BaseRootPacket[]): void {
+  async sendUnreliable(packets: BaseRootPacket[]): Promise<void> {
     const temp: BaseRootPacket[] = [...this.unreliablePacketBuffer];
 
     this.unreliablePacketBuffer = packets;
 
-    this.flush(false);
+    await this.flush(false);
 
     this.unreliablePacketBuffer = temp;
   }
@@ -572,7 +572,7 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
    * @param reason - The reason for why the connection was disconnected
    * @param force - `true` to cleanup the connection immediately, `false` to wait for a client response (default `false`)
    */
-  disconnect(reason?: DisconnectReason, force: boolean = false): void {
+  async disconnect(reason?: DisconnectReason, force: boolean = false): Promise<void> {
     if (this.requestedDisconnect) {
       return;
     }
@@ -582,12 +582,12 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
     const disconnectPacket = new JoinGameErrorPacket(reason ?? DisconnectReason.exitGame());
 
     if (this.lobby !== undefined && this.lobby.getGameState() == GameState.Started) {
-      this.send(new Packet(undefined, new RootPacket([
+      await this.send(new Packet(undefined, new RootPacket([
         new EndGamePacket(this.lobby.getCode(), GameOverReason.CrewmatesByTask, false),
         disconnectPacket,
       ])));
     } else {
-      this.send(new Packet(undefined, new RootPacket([disconnectPacket])));
+      await this.send(new Packet(undefined, new RootPacket([disconnectPacket])));
     }
 
     if (force) {
@@ -629,7 +629,7 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
       }
     }
 
-    this.writeReliable(new KickPlayerPacket(
+    await this.writeReliable(new KickPlayerPacket(
       this.lobby.getCode(),
       this.id,
       isBanned,
@@ -643,12 +643,12 @@ export class Connection extends Emittery<ConnectionEvents> implements Metadatabl
    *
    * @param reason - The reason for why the connection was kicked
    */
-  sendLateRejection(reason: DisconnectReason): void {
+  async sendLateRejection(reason: DisconnectReason): Promise<void> {
     if (this.lobby === undefined) {
       throw new Error("Cannot send a LateRejection packet to a connection that is not in a lobby");
     }
 
-    this.writeReliable(new LateRejectionPacket(
+    await this.writeReliable(new LateRejectionPacket(
       this.lobby.getCode(),
       this.id,
       reason,

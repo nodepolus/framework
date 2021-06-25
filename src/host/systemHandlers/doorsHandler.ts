@@ -17,7 +17,7 @@ export class DoorsHandler {
     this.oldShipStatus = shipStatus.clone();
   }
 
-  closeDoor(doorIds: number | number[]): void {
+  async closeDoor(doorIds: number | number[]): Promise<void> {
     this.setOldShipStatus();
 
     const doorsSystem = this.shipStatus.getSystemFromType(SystemType.Doors) as DoorsSystem;
@@ -32,20 +32,10 @@ export class DoorsHandler {
       doorsSystem.setDoorState(doorIds, false);
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  getDoorsForSystem(systemId: SystemType): number[] {
-    const doors = Doors.forLevel(this.host.getLobby().getLevel())[systemId];
-
-    if (doors === undefined) {
-      throw new Error(`SystemType ${systemId} (${SystemType[systemId]}) does not have any doors`);
-    }
-
-    return doors as number[];
-  }
-
-  setSystemTimeout(systemId: SystemType, time: number): this {
+  async setSystemTimeout(systemId: SystemType, time: number): Promise<void> {
     this.setOldShipStatus();
 
     const doorsSystem = this.shipStatus.getSystemFromType(SystemType.Doors) as DoorsSystem;
@@ -63,9 +53,17 @@ export class DoorsHandler {
       }
     }, 1000);
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
+  }
 
-    return this;
+  getDoorsForSystem(systemId: SystemType): number[] {
+    const doors = Doors.forLevel(this.host.getLobby().getLevel())[systemId];
+
+    if (doors === undefined) {
+      throw new Error(`SystemType ${systemId} (${SystemType[systemId]}) does not have any doors`);
+    }
+
+    return doors as number[];
   }
 
   setOldShipStatus(): this {
@@ -74,8 +72,8 @@ export class DoorsHandler {
     return this;
   }
 
-  sendDataUpdate(): void {
-    this.host.getLobby().sendRootGamePacket(new GameDataPacket([
+  async sendDataUpdate(): Promise<void> {
+    await this.host.getLobby().sendRootGamePacket(new GameDataPacket([
       this.shipStatus.serializeData(this.oldShipStatus),
     ], this.host.getLobby().getCode()));
   }

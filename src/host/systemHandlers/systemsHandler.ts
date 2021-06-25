@@ -56,7 +56,7 @@ export class SystemsHandler {
     protected readonly host: Host,
   ) {}
 
-  repairHeliSystem<T extends HeliSabotageSystem>(repairer: Player, system: T, amount: HeliSabotageAmount): void {
+  async repairHeliSystem<T extends HeliSabotageSystem>(repairer: Player, system: T, amount: HeliSabotageAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -83,10 +83,10 @@ export class SystemsHandler {
         break;
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairDecon<T extends DeconSystem | DeconTwoSystem>(_repairer: Player, system: T, amount: DecontaminationAmount): void {
+  async repairDecon<T extends DeconSystem | DeconTwoSystem>(_repairer: Player, system: T, amount: DecontaminationAmount): Promise<void> {
     let state = 0;
 
     if (amount.isEntering()) {
@@ -99,16 +99,16 @@ export class SystemsHandler {
       state |= DecontaminationDoorState.HeadingUp;
     }
 
-    this.host.getDecontaminationHandlers()[system instanceof DeconSystem ? 0 : 1].start(state);
+    await this.host.getDecontaminationHandlers()[system instanceof DeconSystem ? 0 : 1].start(state);
   }
 
-  repairPolusDoors<T extends DoorsSystem>(_repairer: Player, system: T, amount: PolusDoorsAmount): void {
+  async repairPolusDoors<T extends DoorsSystem>(_repairer: Player, system: T, amount: PolusDoorsAmount): Promise<void> {
     this.setOldShipStatus();
     system.setDoorState(amount.getDoorId(), true);
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairHqHud<T extends HqHudSystem>(repairer: Player, system: T, amount: MiraCommunicationsAmount): void {
+  async repairHqHud<T extends HqHudSystem>(repairer: Player, system: T, amount: MiraCommunicationsAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -133,16 +133,16 @@ export class SystemsHandler {
         break;
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairHudOverride<T extends HudOverrideSystem>(_repairer: Player, system: T, amount: NormalCommunicationsAmount): void {
+  async repairHudOverride<T extends HudOverrideSystem>(_repairer: Player, system: T, amount: NormalCommunicationsAmount): Promise<void> {
     this.setOldShipStatus();
     system.setSabotaged(!amount.isRepaired());
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairOxygen<T extends LifeSuppSystem>(_repairer: Player, system: T, amount: OxygenAmount): void {
+  async repairOxygen<T extends LifeSuppSystem>(_repairer: Player, system: T, amount: OxygenAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -166,7 +166,7 @@ export class SystemsHandler {
         break;
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
   async repairMedbay<T extends MedScanSystem>(_repairer: Player, system: T, amount: MedbayAmount): Promise<void> {
@@ -207,10 +207,10 @@ export class SystemsHandler {
       }
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairReactor<T extends ReactorSystem | LaboratorySystem>(repairer: Player, system: T, amount: ReactorAmount): void {
+  async repairReactor<T extends ReactorSystem | LaboratorySystem>(repairer: Player, system: T, amount: ReactorAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -237,7 +237,7 @@ export class SystemsHandler {
         break;
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
   isSabotaged(checkNonCritical: boolean = false): boolean {
@@ -300,7 +300,7 @@ export class SystemsHandler {
     }
   }
 
-  repairAll(repairNonCritical: boolean = false): void {
+  async repairAll(repairNonCritical: boolean = false): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -348,10 +348,10 @@ export class SystemsHandler {
         break;
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairSabotage<T extends SabotageSystem>(_repairer: Player, system: T, amount: SabotageAmount): void {
+  async repairSabotage<T extends SabotageSystem>(_repairer: Player, system: T, amount: SabotageAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
 
     if (sabotageHandler === undefined) {
@@ -395,7 +395,7 @@ export class SystemsHandler {
         throw new Error(`Attempted to sabotage an unsupported SystemType: ${type} (${SystemType[type]})`);
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
   async repairSecurity<T extends SecurityCameraSystem>(repairer: Player, system: T, amount: SecurityAmount): Promise<void> {
@@ -411,10 +411,10 @@ export class SystemsHandler {
       system.removePlayerViewingCameras(repairer.getId());
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
-  repairSwitch<T extends SwitchSystem>(_repairer: Player, system: T, amount: ElectricalAmount): void {
+  async repairSwitch<T extends SwitchSystem>(_repairer: Player, system: T, amount: ElectricalAmount): Promise<void> {
     this.setOldShipStatus();
     system.getActualSwitches().toggle(amount.getSwitchIndex());
 
@@ -437,7 +437,7 @@ export class SystemsHandler {
       }, 20);
     }
 
-    this.sendDataUpdate();
+    await this.sendDataUpdate();
   }
 
   setOldShipStatus(): this {
@@ -446,8 +446,8 @@ export class SystemsHandler {
     return this;
   }
 
-  sendDataUpdate(): void {
-    this.host.getLobby().sendRootGamePacket(new GameDataPacket([
+  async sendDataUpdate(): Promise<void> {
+    await this.host.getLobby().sendRootGamePacket(new GameDataPacket([
       this.getShipStatus().serializeData(this.oldShipStatus),
     ], this.host.getLobby().getCode()));
   }

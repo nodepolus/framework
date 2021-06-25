@@ -152,7 +152,7 @@ export interface LobbyInstance extends Metadatable {
   getPlayers(): PlayerInstance[];
 
   /**
-   * Gets all of the spawened players in the lobby that belong to a connection.
+   * Gets all of the spawned players in the lobby that belong to a connection.
    */
   getRealPlayers(): PlayerInstance[];
 
@@ -299,7 +299,7 @@ export interface LobbyInstance extends Metadatable {
    * @param clientId - The ID of the connection
    * @returns The connection, or `undefined` if no connections in the lobby have the ID `clientId`
    */
-  findConnection(id: number): Connection | undefined;
+  findConnection(clientId: number): Connection | undefined;
 
   /**
    * Gets the connection with the given client ID, or throws an error if it is
@@ -307,7 +307,7 @@ export interface LobbyInstance extends Metadatable {
    *
    * @param clientId - The ID of the connection
    */
-  findSafeConnection(id: number): Connection;
+  findSafeConnection(clientId: number): Connection;
 
   /**
    * Gets the GameData instance for the lobby.
@@ -458,14 +458,15 @@ export interface LobbyInstance extends Metadatable {
    * @param packet - The packet to be sent
    * @param sendTo - The connections to which the packet will be sent
    */
-  sendRpcPacket(from: BaseInnerNetObject, packet: BaseRpcPacket, sendTo?: Connection[]): void;
+  sendRpcPacket(from: BaseInnerNetObject, packet: BaseRpcPacket, sendTo?: Connection[]): Promise<void>;
 
   /**
    * Spawns an entity in the lobby.
    *
-   * @param entity - The lobby to nbe spawned
+   * @param entity - The entity to be spawned
+   * @param sendTo - The connections to which the packet will be sent
    */
-  spawn(entity: BaseInnerNetEntity, sendTo?: Connection[]): void;
+  spawn(entity: BaseInnerNetEntity, sendTo?: Connection[]): Promise<void>;
 
   /**
    * Spawns a player in the lobby.
@@ -474,14 +475,15 @@ export interface LobbyInstance extends Metadatable {
    * @param playerData - The data for the spawned player
    * @returns The PlayerInstance for the spawned player
    */
-  spawnPlayer(player: EntityPlayer, playerData: PlayerData): PlayerInstance;
+  spawnPlayer(player: EntityPlayer, playerData: PlayerData): Promise<PlayerInstance>;
 
   /**
    * Despawns the given InnerNetObject.
    *
    * @param innerNetObject - The InnerNetObject to be despawned
+   * @param sendTo - The connections to which the packet will be sent
    */
-  despawn(innerNetObject: BaseInnerNetObject, sendTo?: Connection[]): void;
+  despawn(innerNetObject: BaseInnerNetObject, sendTo?: Connection[]): Promise<void>;
 
   /**
    * Gets all players that are acting hosts of the lobby.
@@ -496,5 +498,5 @@ export interface LobbyInstance extends Metadatable {
    * @param message - The message to be sent
    * @param onLeft - `true` to display the message on the left-hand side, `false` to display it on the right-hand side
    */
-  sendChat(name: string, color: PlayerColor, message: string | TextComponent, onLeft: boolean): void;
+  sendChat(name: string, color: PlayerColor, message: string | TextComponent, onLeft: boolean): Promise<void>;
 }
