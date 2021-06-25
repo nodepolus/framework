@@ -196,16 +196,24 @@ export class Lobby implements LobbyInstance {
     return (new Date().getTime() - this.createdAt) / 1000;
   }
 
-  cleanup(reason?: DisconnectReason): void {
+  async cleanup(reason?: DisconnectReason): Promise<void> {
     this.cancelJoinTimer();
     this.cancelStartTimer();
     this.hostInstance.clearTimers();
 
     const connections = [...this.connections];
+    const promiseArray: Promise<void>[] = [];
 
     for (let i = 0; i < this.connections.length; i++) {
-      connections[i].disconnect(reason ?? DisconnectReason.custom("The lobby was closed by the server"), true);
+      promiseArray.push(
+        connections[i].disconnect(
+          reason ?? DisconnectReason.custom("The lobby was closed by the server"),
+          true,
+        ),
+      );
     }
+
+    await Promise.allSettled(promiseArray);
   }
 
   async close(reason?: DisconnectReason, force: boolean = false): Promise<void> {
