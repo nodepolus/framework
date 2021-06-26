@@ -49,12 +49,14 @@ import {
 } from "../../api/events/game";
 
 export class SystemsHandler {
-  protected oldShipStatus: BaseInnerShipStatus = this.host.getLobby().getSafeShipStatus().getShipStatus();
+  protected oldShipStatus: BaseInnerShipStatus;
   protected sabotageCountdownInterval?: NodeJS.Timeout;
 
   constructor(
     protected readonly host: Host,
-  ) {}
+  ) {
+    this.oldShipStatus = this.host.getLobby().getSafeShipStatus().getShipStatus();
+  }
 
   async repairHeliSystem<T extends HeliSabotageSystem>(repairer: Player, system: T, amount: HeliSabotageAmount): Promise<void> {
     const sabotageHandler = this.host.getSabotageHandler();
