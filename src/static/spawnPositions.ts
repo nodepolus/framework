@@ -132,7 +132,7 @@ export class SpawnPositions {
     const positions = SpawnPositions.forLevel(level);
     const center = isSpawn ? positions.initial : positions.meetingOne;
     const spawnPosition = Vector2.up()
-      .rotate((playerId - 1) * (360 / playerCount))
+      .rotate(((playerId - 1) * (360 / playerCount)) * (Math.PI / 180))
       .multiply(SpawnPositions.radiusForLevel(level));
 
     return center.add(spawnPosition).add(PLAYER_TRUE_POSITION_OFFSET);
